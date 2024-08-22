@@ -185,23 +185,27 @@ def cantonese_to_simple(transdict):
     char_list = [chr(i) for i in range(0x4E00, 0x9FFF + 1)]
     for jian in char_list:
         jian_jyutping = ToJyutping.get_jyutping_candidates(jian)[0]
-        if jian_jyutping:
-            default_pinyin[jian] = jian_jyutping
+        jian_jyutpingList = [x for x in jian_jyutping[1]]
+        if jian_jyutpingList:
+            default_pinyin[jian] = jian_jyutpingList
 
         fan = zhconv.convert(jian, "zh-hant")
         fan_jyutping = ToJyutping.get_jyutping_candidates(fan)[0]
-        if fan_jyutping and fan_jyutping != jian_jyutping:
-            default_pinyin[fan] = fan_jyutping
+        fan_jyutpingList = [x for x in fan_jyutping[1]]
+        if fan_jyutping and fan != jian and fan_jyutpingList == jian_jyutpingList:
+            default_pinyin[fan] = fan_jyutpingList
             trans_res[fan] = jian
 
     for fan, jian in transdict.items():
         jian_jyutping = ToJyutping.get_jyutping_candidates(jian)[0]
-        if jian_jyutping and default_pinyin.get(jian) is None:
-            default_pinyin[jian] = [x for x in jian_jyutping[1]]
+        jian_jyutpingList = [x for x in jian_jyutping[1]]
+        if jian_jyutpingList and default_pinyin.get(jian) is None:
+            default_pinyin[jian] = jian_jyutpingList
 
         fan_jyutping = ToJyutping.get_jyutping_candidates(fan)[0]
-        if fan_jyutping and fan_jyutping != jian_jyutping and default_pinyin.get(fan):
-            default_pinyin[fan] = [x for x in fan_jyutping[1]]
+        fan_jyutpingList = [x for x in fan_jyutping[1]]
+        if fan_jyutping and fan != jian and fan_jyutpingList == jian_jyutpingList and default_pinyin.get(fan) is None:
+            default_pinyin[fan] = fan_jyutpingList
             trans_res[fan] = jian
 
     return trans_res
