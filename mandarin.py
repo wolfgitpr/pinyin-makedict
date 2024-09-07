@@ -18,7 +18,7 @@ class MakeMandarin(MakeDict):
                 res = re.search(r"(.*[\u4e00-\u9fa5]) (.*[\u4e00-\u9fa5]) \[([\w :]+)] (\{([\w :]+)})?", line)
                 char = res.group(2) if res else None
                 if char and not re.search("[0-9A-Za-z·:，]", char):
-                    if res.group(3):
+                    if len(char) > 1 and res.group(3):
                         pinyin = res.group(3).lower().replace("u:", "v")
                         values = ["er5" if i == "r5" else i for i in pinyin.split(" ")]
 
