@@ -8,8 +8,8 @@ from pypinyin.style._tone_convert import tone3_to_tone
 
 
 class MakeMandarin(MakeDict):
-    def __init__(self, out_path, overwrite_pinyin, add_pinyin, transdict, user_dict):
-        super().__init__(out_path, overwrite_pinyin, add_pinyin, transdict, user_dict)
+    def __init__(self, out_path, overwrite_pinyin, add_pinyin, transdict, user_dict, force_mono):
+        super().__init__(out_path, overwrite_pinyin, add_pinyin, transdict, user_dict, force_mono)
 
     def load_dict(self):
         # 获取词组
@@ -39,7 +39,12 @@ class MakeMandarin(MakeDict):
             for raw_phrase, raw_pinyin in self.phrases_dict_out.items():
                 clip_pinyin = raw_pinyin.split(" ")
                 phrase_size = len(raw_phrase)
-                if 1 < phrase_size == len(clip_pinyin) <= 4:
+                skip = False
+                for text in self.force_mono:
+                    if text in raw_phrase:
+                        skip = True
+                        break
+                if 1 < phrase_size == len(clip_pinyin) <= 4 and not skip:
                     tonePinyin = ",".join([tone3_to_tone(x) for x in clip_pinyin])
                     f.write(f"{raw_phrase}:{tonePinyin}\n")
                     for i, (text, pinyin) in enumerate(zip(raw_phrase, clip_pinyin)):
@@ -48,8 +53,9 @@ class MakeMandarin(MakeDict):
 
         with open(f"{self.out_path}/phrases_map.txt", "w", encoding='utf-8') as f:
             for k, v in self.pos_dict.items():
-                map_pos = "".join([str(x) for x in list(set(v))])
-                f.write(f"{k}:{map_pos}\n")
+                if k not in self.force_mono:
+                    map_pos = "".join([str(x) for x in list(set(v))])
+                    f.write(f"{k}:{map_pos}\n")
 
         with open(f"{self.out_path}/word.txt", "w", encoding='utf-8') as f:
             for k, v in self.default_pinyin.items():
@@ -71,11 +77,14 @@ class MakeMandarin(MakeDict):
 out_path = "dict/mandarin"
 overwrite_pinyin = {
     "儿": "er5", "了": "le5", "呢": "ne5", "曾": "ceng2", "重": "chong2", "地": "de5", "藏": "cang2", "都": "dou1",
-    "还": "hai2", "弹": "tan2", "着": "zhe5", "的": "de5", "哦": "o4", "盛": "sheng4", "哟": "you5", "喔": "o1",
-    "湮": "yan1", "拓": "ta4", "系": "xi4", "谁": "shei2", "什": "shen2", "么": "me5", "扛": "kang2"
+    "还": "hai2", "弹": "tan2", "着": "zhe5", "的": "de5", "哦": "o4", "盛": "sheng4", "哟": "yo5", "喔": "o1",
+    "湮": "yan1", "拓": "ta4", "系": "xi4", "谁": "shei2", "什": "shen2", "么": "me5", "扛": "kang2", "攒": "zan3",
+    "嗯": "n4", "喳": "zha1", "哋": "di4", "嘅": "ge3", "粘": "zhan1", "恁": "nen4", "嗌": "ai4", "褪": "tui4"
 }
 
 extra_pinyin = {"濛": "meng2", "尅": "kei2"}
+
+force_mono = ["都", "喳", "褪"]
 
 chinese_transdict = {}
 with open("data/fanjian.txt", "r", encoding="utf-8") as f:
@@ -97,4 +106,4 @@ with open("data/man_user.txt", "r", encoding="utf-8") as f:
         k, v = line.strip('\n').split(':')
         user_dict[k] = v
 
-MakeMandarin(out_path, overwrite_pinyin, extra_pinyin, chinese_transdict, user_dict)
+MakeMandarin(out_path, overwrite_pinyin, extra_pinyin, chinese_transdict, user_dict, force_mono)

@@ -3,7 +3,7 @@ from collections import Counter
 
 
 class MakeDict:
-    def __init__(self, out_path, overwrite_pinyin, add_pinyin, trans_dict=None, user_dict=None):
+    def __init__(self, out_path, overwrite_pinyin, add_pinyin, trans_dict=None, user_dict=None, force_mono={}):
         if trans_dict is None:
             trans_dict = {}
         if user_dict is None:
@@ -13,6 +13,7 @@ class MakeDict:
         self.add_pinyin = add_pinyin
         self.transdict = trans_dict
         self.user_dict = user_dict
+        self.force_mono = force_mono
 
         self.phrases_dict_out = {}
         self.phrase_pinyin_dict = {}
