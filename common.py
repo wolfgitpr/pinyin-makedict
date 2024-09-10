@@ -1,11 +1,9 @@
 import os
 from collections import Counter
 
-import zhconv
-
 
 class MakeDict:
-    def __init__(self, out_path, overwrite_pinyin, add_pinyin, trans_dict=None, user_dict=None):
+    def __init__(self, out_path, overwrite_pinyin, add_pinyin, trans_dict=None, user_dict=None, force_mono={}):
         if trans_dict is None:
             trans_dict = {}
         if user_dict is None:
@@ -15,6 +13,7 @@ class MakeDict:
         self.add_pinyin = add_pinyin
         self.transdict = trans_dict
         self.user_dict = user_dict
+        self.force_mono = force_mono
 
         self.phrases_dict_out = {}
         self.phrase_pinyin_dict = {}
@@ -129,35 +128,4 @@ class MakeDict:
 
     # 输出
     def make_dict(self):
-        self.pos_dict.clear()
-        with open(f"{self.out_path}/phrases_dict.txt", "w", encoding='utf-8') as f:
-            for raw_phrase, raw_pinyin in self.phrases_dict_out.items():
-                clip_pinyin = raw_pinyin.split(" ")
-                phrase_size = len(raw_phrase)
-                if 1 < phrase_size == len(clip_pinyin) <= 4:
-                    tonePinyin = ",".join(clip_pinyin)
-                    f.write(f"{raw_phrase}:{tonePinyin}\n")
-                    for i, (text, pinyin) in enumerate(zip(raw_phrase, clip_pinyin)):
-                        if text in self.map_keys:
-                            self.pos_dict.setdefault(text, []).append(phrase_size)
-
-        with open(f"{self.out_path}/phrases_map.txt", "w", encoding='utf-8') as f:
-            for k, v in self.pos_dict.items():
-                map_pos = "".join([str(x) for x in list(set(v))])
-                f.write(f"{k}:{map_pos}\n")
-
-        with open(f"{self.out_path}/word.txt", "w", encoding='utf-8') as f:
-            for k, v in self.default_pinyin.items():
-                if len(k) == 1:
-                    v_list = ",".join([item for item in v if item])
-                    f.write(f"{k}:{v_list}\n")
-
-        with open(f"{self.out_path}/trans_word.txt", "w", encoding='utf-8') as f:
-            for k, v in self.default_pinyin.items():
-                t_k = zhconv.convert(k, "zh-hant")
-                if t_k != k:
-                    f.write(f"{t_k}:{k}\n")
-
-            for k, v in self.transdict.items():
-                if k != v and k not in self.default_pinyin.keys() and v in self.default_pinyin.keys():
-                    f.write(f"{k}:{v}\n")
+        pass
