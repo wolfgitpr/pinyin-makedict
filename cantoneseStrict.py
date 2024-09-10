@@ -82,7 +82,7 @@ class MakeCantoneseStrict(MakeDict):
                     f.write(f"{k}:{v}\n")
 
 
-out_path = "dict/cantonese"
+out_path = "dict/cantonese_strict"
 
 chinese_transdict = {}
 with open("data/fanjian.txt", "r", encoding="utf-8") as f:
