@@ -84,7 +84,7 @@ overwrite_pinyin = {
 
 extra_pinyin = {"濛": "meng2", "尅": "kei2"}
 
-force_mono = ["都", "喳", "褪"]
+force_mono = ["喳", "褪"]
 
 chinese_transdict = {}
 with open("data/fanjian.txt", "r", encoding="utf-8") as f:
