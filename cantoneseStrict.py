@@ -11,16 +11,24 @@ class MakeCantoneseStrict(MakeDict):
         super().__init__(out_path, overwrite_pinyin, add_pinyin, transdict)
 
     def load_dict(self):
-        with open("data/cccedict-canto-readings.txt", "r", encoding="utf-8") as f:
+        # with open("data/cccedict-canto-readings.txt", "r", encoding="utf-8") as f:
+        #     for line in f:
+        #         res = re.search(r"(.*[\u4e00-\u9fa5]) (.*[\u4e00-\u9fa5]) \[([\w :]+)] (\{([\w :]+)})?", line)
+        #         key = res.group(1) if res else None
+        #         if key and not re.search("[0-9A-Za-z·:，]", key):
+        #             if res.group(5):
+        #                 key = "".join(self.transdict.get(x, x) for x in list(key))
+        #                 pinyin = res.group(5).lower()
+        #                 values = [i.replace(":", "") for i in pinyin.split(" ")]
+        #                 self.phrase_pinyin_dict[key] = " ".join(values)
+        with open("data/sanitized.txt", "r", encoding="utf-8") as f:
             for line in f:
-                res = re.search(r"(.*[\u4e00-\u9fa5]) (.*[\u4e00-\u9fa5]) \[([\w :]+)] (\{([\w :]+)})?", line)
-                key = res.group(1) if res else None
-                if key and not re.search("[0-9A-Za-z·:，]", key):
-                    if res.group(5):
-                        key = "".join(self.transdict.get(x, x) for x in list(key))
-                        pinyin = res.group(5).lower()
-                        values = [i.replace(":", "") for i in pinyin.split(" ")]
-                        self.phrase_pinyin_dict[key] = " ".join(values)
+                lyric, pinyin = line.strip().split("\t")
+                if len(lyric) == 1:
+                    jian = self.transdict.get(lyric, lyric)
+                    self.default_pinyin[jian] = pinyin
+                else:
+                    self.phrase_pinyin_dict[lyric] = pinyin
 
     def fill_unicode_pinyin(self):
         char_list = [chr(i) for i in range(0x4E00, 0x9FFF + 1)]
@@ -69,14 +77,6 @@ class MakeCantoneseStrict(MakeDict):
                     f.write(f"{k}:{v_list}\n")
 
         with open(f"{self.out_path}/trans_word.txt", "w", encoding='utf-8') as f:
-            for k, v in self.default_pinyin.items():
-                t_k = zhconv.convert(k, "zh-hant")
-                if t_k != k:
-                    jyutping = ToJyutping.get_jyutping_candidates(t_k)[0]
-                    jyutping = [x for x in jyutping[1]]
-                    if v[0] == jyutping:
-                        f.write(f"{t_k}:{k}\n")
-
             for k, v in self.transdict.items():
                 if k != v and k not in self.default_pinyin.keys() and v in self.default_pinyin.keys():
                     f.write(f"{k}:{v}\n")
