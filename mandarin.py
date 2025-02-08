@@ -66,11 +66,11 @@ class MakeMandarin(MakeDict):
         with open(f"{self.out_path}/trans_word.txt", "w", encoding='utf-8') as f:
             for k, v in self.default_pinyin.items():
                 t_k = zhconv.convert(k, "zh-hant")
-                if t_k != k:
+                if t_k != k and t_k not in not_fan:
                     f.write(f"{t_k}:{k}\n")
 
             for k, v in self.transdict.items():
-                if k != v and k not in self.default_pinyin.keys() and v in self.default_pinyin.keys():
+                if k != v and k not in self.default_pinyin.keys() and v in self.default_pinyin.keys() and k not in not_fan:
                     f.write(f"{k}:{v}\n")
 
 
@@ -86,17 +86,19 @@ extra_pinyin = {"濛": "meng2", "尅": "kei2"}
 
 force_mono = ["喳", "褪"]
 
+not_fan = ["吒"]
+
 chinese_transdict = {}
 with open("data/fanjian.txt", "r", encoding="utf-8") as f:
     for line in f:
         k, v = line.strip('\n').split('	')
-        if len(k) == 1:
+        if len(k) == 1 and k not in not_fan:
             chinese_transdict[k] = v
 
 with open("data/fanjian2.txt", "r", encoding="utf-8") as f:
     for line in f:
         k, v = line.strip('\n').split(',')
-        if len(k) == 1:
+        if len(k) == 1 and k not in not_fan:
             chinese_transdict[k] = v
 
 user_dict = {}
