@@ -1,0 +1,20 @@
+# Line-ending policy for the generator repository (added 2026-10-19, cpp-pinyin finding F32).
+#
+# WHY: the eight generated tables are a CROSS-REPOSITORY byte contract -- this repository produces
+# them, `tools/check_drift.ps1` compares them with cpp-pinyin's `data/dialects/**` byte for byte.
+# Measured before this file existed: every tracked text file here was `i/lf` in the index but `w/crlf`
+# in a Windows working copy, and the generators wrote CRLF in text mode. Both sides were wrong in
+# the same direction, so the comparison passed while the bytes were not the ones cpp-pinyin ships.
+#
+# `text eol=lf` on sources (they are read by tools, diffed, and run under bash on the board) and on
+# the input tables under data/ (they are parsed line by line; a CRLF read is a stray `\r` on every
+# key). The OUTPUT tables also match `*.txt` below, but that rule is NOT what makes them LF:
+# they live in out/ (ignored, so git never touches them), and `write_lf_atomically()` is what
+# guarantees their line endings. Measured with `git check-attr`: the glob DOES resolve for
+# out/dict/mandarin/word.txt -- which is exactly why the guarantee must not rest on it.
+* text=auto eol=lf
+*.py text eol=lf
+*.ps1 text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+*.json text eol=lf

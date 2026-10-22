@@ -1,0 +1,15 @@
+# 生成物：绝不入库。`tools/check_drift.ps1` 负责把生成物和 cpp-pinyin 正在消费的词典比对。
+out/
+__pycache__/
+*.pyc
+# 临时诊断脚本与中间产物（探针、一次性实验），不是仓库内容。
+.tmp/
+# 版本实验用的下载/解包产物（wheel、pkg-*、shadow）。其中的 .py 复现脚本要入库，见 TOOLING.md。
+.tools_probe/wheels/
+.tools_probe/pkg-*/
+.tools_probe/pkg*/
+.tools_probe/shadow/
+.tools_probe/__pycache__/
+
+# IDE workspace directory (JetBrains): local project files, never committed.
+.idea/
