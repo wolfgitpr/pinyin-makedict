@@ -1,0 +1,31 @@
+# Project metadata for the dictionary generator.
+#
+# WHAT THIS IS NOT: a package. Nothing is published, nothing is importable from PyPI, and there is
+# no build backend on purpose -- the artefacts of this repository are eight .txt tables, not a wheel.
+# The file exists for the two things that DO need to be written down somewhere machine-readable:
+#
+#   1. `requires-python`, so a wrong interpreter fails loudly at the door instead of at the first
+#      `list[str] | None` annotation. The floor is 3.10 and it is NOT arbitrary: `tools/compare_dict_dirs.py`
+#      annotates with PEP 604 unions (`-> list[str] | None`), and no file in this tree carries
+#      `from __future__ import annotations`, so those annotations are EVALUATED at import time -- on 3.8/3.9
+#      that raises TypeError before any tool runs (verified: `f.__annotations__` holds a real
+#      `types.UnionType`, not a string). The generators alone would run on 3.8; the TOOLS set the floor, and
+#      a floor nobody can verify is worse than a higher one that is true;
+#   2. the formatter/linter line length, so `ruff` and the editor do not disagree.
+#
+# DEPENDENCIES STAY IN requirements.txt, deliberately. They are DATA dependencies, not tool
+# dependencies: pypinyin / ToJyutping / zhconv each ship dictionary data that has moved between
+# releases, so every one of them is pinned with `==` and carries a measured note about what changes
+# if the pin moves (see requirements.txt and TOOLING.md section 2). Duplicating those pins here would
+# create the second authority that file spends forty lines avoiding -- and `common.check_dependency_versions()`
+# reads the installed versions, not this file.
+
+[project]
+name = "pinyin-makedict"
+version = "0.0.0"
+description = "Produces the frozen Mandarin and Cantonese tables shipped by cpp-pinyin v2"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.ruff]
+line-length = 100

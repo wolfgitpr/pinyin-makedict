@@ -1,0 +1,29 @@
+# 出厂表的静态清单
+#
+# 本文件是"这一代出厂数据应该长什么样"的**字节级期望值**。生成物本身不入库（`out/` 被 gitignore），
+# 所以没有这份清单，读者手上就没有一个可核对的固定值——只能靠邻仓的 check_drift.ps1 现跑现比。
+#
+# 复现方式（本文件就是它的期望值）：在干净检出上用钉版依赖跑
+#     python gen/mandarin.py --out <tmp>\mandarin
+#     python gen/cantonese.py --out <tmp>\cantonese
+# 然后按下表逐条比对。全量复核走 tools/check_drift.ps1，命令见 TOOLING.md §1。
+#
+# 语料出处（都已随仓跟踪）：
+#   data/sources/cedict_ts.u8                 头部带 publisher / date=2023-04-16T01:18:48Z / entries=121646 / license URL
+#   data/sources/cccedict-canto-readings.txt  头部带 Version 2015-09-23
+#   上游链接见 README.md 的「Open-source softwares used」（cc-cedict 与 kfcd/pinyin）
+#
+# 格式：<方言>/<表>  字节数  行数  sha256
+#       8 张表 + 2 个 format.txt 标记 = 10 行。下面每一行都必须严格是这个格式，别在这里写正文
+#       —— tests/test_data_gates.py 按"非空且不以 # 开头"就是数据行来解析。
+
+mandarin/word.txt  164968  17525  ab5898cf8d89b985fd4eda1b5c46680edcfd016f4a0cad2f424f1fa70b090fbf
+mandarin/phrases_dict.txt  146439  6975  77f986f93b6927a090ed31963cfd5d2905311fb39a3abde57db0af278a935d79
+mandarin/phrases_map.txt  7087  1003  7fc4dbf19e770a6a2b28e4f57560f54c1b4d071fabded71410173d838189c721
+mandarin/trans_word.txt  49542  6110  6204639220ccc7b6e743800ba4968c6daf15a63ad57a976840277320faad6bee
+mandarin/format.txt  2  1  53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3
+cantonese/word.txt  238117  19483  1c83e9addf63cba599506f71110abca1122a9a2d848100af527a335ba0e8d072
+cantonese/phrases_dict.txt  29369  1477  7ef94d1132edc3793750aac3d9c9b0619b576e0b2f5d8d88778109a00a48b687
+cantonese/phrases_map.txt  2995  461  5d23502264ad8b6322c1e7f64d560ca2bb0b8ad7916fc9833a12c57c86919869
+cantonese/trans_word.txt  14426  1799  5d6ca6ea90195a1834c552823e3a783a98e44e50a2b8eed52a6bdea1b4196ba7
+cantonese/format.txt  2  1  53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3

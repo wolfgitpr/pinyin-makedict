@@ -1,0 +1,12 @@
+# Test and verification tooling -- NOT data dependencies.
+#
+# `requirements.txt` pins the three packages that DECIDE what the generated tables contain
+# (pypinyin / ToJyutping / zhconv); changing any of them changes bytes on disk. This file is the other
+# kind: tools that only read and assert. Keeping them apart is what lets `requirements.txt` stay an exact
+# statement about the DATA, while a test runner can move independently.
+#
+# Without this file a clean checkout could not run `python -m pytest tests -q` at all: pytest was not
+# declared anywhere and the repository has no CI workflow that installs it.
+#
+# Install:  pip install -r requirements.txt -r requirements-dev.txt
+pytest==9.0.2

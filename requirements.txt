@@ -1,0 +1,22 @@
+# 精确钉版，因为这是**数据**依赖而不是代码依赖。
+#
+# 生成的词典与 cpp-pinyin 的 data/dialects 冻结表是**字节级契约**。这两个包都自带字典数据，而数据在版本
+# 之间动过（量到的差异见 TOOLING.md §2），所以这里写范围就等于默默产出另一份词典。一律用 `==`。
+#
+# 安装:  pip install -r requirements.txt
+# 校验:  python -c "import common; print(common.check_dependency_versions())"
+#         -> [] 表示装着的版本与冻结表当初使用的版本一致。
+#
+# 0.55.0，不是 0.54.0：其余全部钉住（同一份 data/、ToJyutping 3.2.0、zhconv 1.4.3）时实测，
+# 0.55.0 逐字节复现四张普通话表，0.54.0 不能（word.txt 17502 vs 17525 行：23 个字缺失、5 个读音不同）。
+# 两条独立路径给出同样结论：按本文件钉版新建的 venv，以及本仓 `tools/run_versions.py 0.54.0 3.2.0`。
+pypinyin==0.55.0
+# 3.2.0，不是 3.1.0：3.1.0 恰好复现 噚 的候选顺序，但实测那个顺序到不了输出（含 噚 的 44 条粤语语料在
+# 两版下转换结果完全相同，首读音都是 cam4）。钉旧版只会换来一个更干净的 diff 和一次强制降级，所以选
+# 现行版，差异记在 TOOLING.md §5。
+ToJyutping==3.2.0
+# zhconv 必须钉：实测换 zhconv **就等于换词典** —— 1.2.3 下四张粤语表逐字节一致，但两张普通话表变了
+# （word.txt 18055 vs 17525 行、trans_word.txt 5844 vs 6110）。所以这个钉版对普通话是**必要的**，
+# 不只是整齐。它与 gen/common.py 的 EXPECTED_VERSIONS 成对；只改一处会重新造出"同一事实两份权威"的漂移。
+# 量到的差异见 TOOLING.md §4。
+zhconv==1.4.3
