@@ -1,0 +1,67 @@
+# 本仓的门禁矩阵。
+#
+# Called by `test_runner.yml`, which owns the push / pull_request / tag triggers for the whole repository. The
+# split mirrors the consumer repository on purpose: one file says WHEN to run, this one says WHAT to run, so a
+# maintainer looking for "what does CI check" has one place to read.
+#
+# WHY A MATRIX AT ALL. The tables are generated from three pinned packages, and the generators are plain Python
+# that runs on the interpreter it is given. `pyproject.toml` declares `requires-python = ">=3.10"` and explains
+# that the floor is real (PEP 604 unions evaluated at import time), so the floor is EXERCISED here rather than
+# claimed: 3.10 is a leg, not a sentence.
+#
+# WHY ONLY ONE LEG ON WINDOWS AND macOS. Generation is pure Python over tracked source files, so those platforms
+# differ only in path handling and default encoding -- one leg each is enough to catch that class. The full
+# interpreter sweep stays on Linux, where legs are cheap. Measured locally 2026-10-23: the whole suite is about
+# 11 seconds, so the cost here is scheduling, not compute.
+
+name: Dictionary CI
+
+on:
+  workflow_call:
+
+jobs:
+  gates:
+    name: gates (${{ matrix.os }}, py${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest,  python: "3.10" }
+          - { os: ubuntu-latest,  python: "3.11" }
+          - { os: ubuntu-latest,  python: "3.12" }
+          - { os: ubuntu-latest,  python: "3.13" }
+          - { os: windows-latest, python: "3.13" }
+          - { os: macos-latest,   python: "3.13" }
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # The tools read tracked history; a shallow clone would silently change what they can see.
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install the pinned data dependencies and the test tooling
+        run: python -m pip install --disable-pip-version-check -r requirements.txt -r requirements-dev.txt
+
+      - name: Run the gates
+        # One command, one verdict list. It calls the existing instruments instead of re-implementing them:
+        # the manifest comparison is a pytest case, the pin check is a pytest case, and the cross-repository
+        # drift gate SKIPs with a printed reason when no consumer checkout is available (as here).
+        run: python tools/run_all_gates.py
+
+      - name: Record what this leg could not check
+        if: always()
+        run: |
+          echo "The drift gate needs a cpp-pinyin checkout plus PowerShell, so it SKIPs on these runners."
+          echo "The delivery gate still proves the eight tables regenerate byte-for-byte to MANIFEST.sha256:"
+          echo "  - it re-runs both generators into a temporary directory and compares sizes, line counts and sha256"
+          echo "See docs/RELEASE_CHECKLIST.md section 1 for what a release must ALSO verify on a machine that has"
+          echo "the consumer checkout."

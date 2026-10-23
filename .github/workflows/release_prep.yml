@@ -1,0 +1,131 @@
+# 发布预备：只在人工触发下运行。
+#
+# WHAT IT PRODUCES. The eight tables plus the two `format.txt` markers, packaged as one tar.gz whose name carries
+# the version, a `.sha256` beside it, and a release-note draft listing what is inside with the sizes and hashes the
+# manifest already states. The consumer repository pins a snapshot; this is the artefact it can be pinned BY.
+#
+# WHAT IT REFUSES TO DO. It does not regenerate `MANIFEST.sha256`. That file describes the tables, not a tarball,
+# and rewriting it during a release would turn "the gates agreed" into "the gates were made to agree". If the
+# tables changed, they changed before the tag, through a reviewed commit.
+#
+# NEVER RUN YET. This is the first workflow of its kind in this repository (added 2026-10-23), so the first dispatch
+# IS its verification. `docs/RELEASE_CHECKLIST.md` section 2 step 5 exists for that: download the artefact and check
+# it really holds ten files under `mandarin/` and `cantonese/`.
+
+name: Dictionary release preparation
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version stamped into the artefact name, without a prefix (e.g. 2.0.0)"
+        required: true
+        default: "2.0.0"
+      dry_run:
+        description: "Build and verify everything, but do not upload the artefact"
+        type: boolean
+        default: false
+
+jobs:
+  prepare:
+    name: prepare dict-v${{ inputs.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: |
+            requirements.txt
+            requirements-dev.txt
+
+      - name: Install the pinned data dependencies and the test tooling
+        run: python -m pip install --disable-pip-version-check -r requirements.txt -r requirements-dev.txt
+
+      - name: Run the gates before packaging anything
+        # A release that starts by packaging has no evidence; this runs the same command developers run.
+        run: python tools/run_all_gates.py
+
+      - name: Generate both dialects
+        run: |
+          python gen/mandarin.py --out out/dict/mandarin
+          python gen/cantonese.py --out out/dict/cantonese
+
+      - name: Check the generated tree against the manifest, file by file
+        # The delivery gate already compared bytes; this prints the comparison a human can read next to the
+        # artefact, using the same manifest rather than a second list of expectations.
+        run: |
+          python - <<'PY'
+          import hashlib, pathlib, sys
+          root = pathlib.Path("out/dict")
+          rows = [line.split() for line in pathlib.Path("MANIFEST.sha256").read_text(encoding="utf-8").splitlines()
+                  if line.strip() and not line.startswith("#")]
+          bad = 0
+          for name, size, lines, digest in rows:
+              path = root / name
+              if not path.is_file():
+                  print(f"  MISSING {name}")
+                  bad += 1
+                  continue
+              data = path.read_bytes()
+              actual_lines = data.count(b"\n")
+              actual_digest = hashlib.sha256(data).hexdigest()
+              ok = (len(data) == int(size) and actual_lines == int(lines) and actual_digest == digest)
+              print(f"  {'ok  ' if ok else 'FAIL'} {name}  {len(data)} bytes  {actual_lines} lines")
+              bad += 0 if ok else 1
+          if bad:
+              sys.exit(f"{bad} file(s) disagree with MANIFEST.sha256")
+          print(f"  all {len(rows)} entries agree with MANIFEST.sha256")
+          PY
+
+      - name: Package the tables
+        run: |
+          set -euo pipefail
+          name="pinyin-makedict-${{ inputs.version }}"
+          tar -czf "${name}.tar.gz" -C out/dict mandarin cantonese
+          sha256sum "${name}.tar.gz" > "${name}.tar.gz.sha256"
+          echo "--- what is inside ---"
+          tar -tzf "${name}.tar.gz"
+          echo "--- digest ---"
+          cat "${name}.tar.gz.sha256"
+
+      - name: Write the release-note draft
+        run: |
+          set -euo pipefail
+          name="pinyin-makedict-${{ inputs.version }}"
+          {
+            echo "# Dictionary tables ${{ inputs.version }}"
+            echo
+            echo "Consumed by cpp-pinyin v2. Produced from the pinned dependencies in \`requirements.txt\`."
+            echo
+            echo "| file | bytes | lines | sha256 |"
+            echo "|---|---|---|---|"
+            grep -v '^#' MANIFEST.sha256 | grep -v '^$' | while read -r name size lines digest; do
+              echo "| \`${name}\` | ${size} | ${lines} | \`${digest}\` |"
+            done
+            echo
+            echo "Artefact \`${name}.tar.gz\` sha256:"
+            echo
+            echo '```'
+            cat "${name}.tar.gz.sha256"
+            echo '```'
+            echo
+            echo "The table hashes above come from \`MANIFEST.sha256\`; the tarball hash describes the archive."
+          } > RELEASE_NOTES.md
+          cat RELEASE_NOTES.md
+
+      - name: Upload the artefact
+        if: ${{ !inputs.dry_run }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: pinyin-makedict-${{ inputs.version }}
+          path: |
+            pinyin-makedict-${{ inputs.version }}.tar.gz
+            pinyin-makedict-${{ inputs.version }}.tar.gz.sha256
+            RELEASE_NOTES.md
+          if-no-files-found: error

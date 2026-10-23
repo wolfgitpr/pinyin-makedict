@@ -1,0 +1,24 @@
+# 本仓的唯一触发入口。
+#
+# The consumer repository learned this the hard way: when every workflow carries its own triggers, a push can
+# start several runs of the same pipeline against the same commit, and a concurrency group keyed on the ref then
+# cancels one of them while its cancelled-but-unsettled sibling blocks the next push from starting anything at
+# all. So triggers live here, alone, and `ci.yml` only says what to run.
+
+name: test_runner
+
+on:
+  push:
+    branches: [main, dev, v2]
+    tags: ["dict-v*"]
+  pull_request:
+  workflow_dispatch:
+
+# A newer push to the same ref makes the older run pointless; cancelling it keeps the queue honest.
+concurrency:
+  group: test_runner-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  gates:
+    uses: ./.github/workflows/ci.yml
